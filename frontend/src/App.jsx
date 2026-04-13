@@ -16,6 +16,7 @@ import WalletPage from './pages/WalletPage';
 import AdminTasks from './pages/AdminTasks';
 import AdminUsers from './pages/AdminUsers';
 import AdminSubmissions from './pages/AdminSubmissions';
+import AdminProjects from './pages/Adminprojects';
 import NotFound from './pages/NotFound';
 
 const queryClient = new QueryClient({
@@ -117,7 +118,11 @@ function AppRoutes() {
           <AdminSubmissions />
         </ProtectedRoute>
       } />
-
+       <Route path="/admin/psubmissions" element={
+        <ProtectedRoute roles={['admin']}>
+          <AdminProjects />
+        </ProtectedRoute>
+      } />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

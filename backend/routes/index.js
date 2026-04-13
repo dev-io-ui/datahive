@@ -11,10 +11,20 @@ const {
 } = require('../middleware/validators');
 const { upload } = require('../config/storage');
 
+console.log("authCtrl");
 const authCtrl = require('../controllers/authController');
+console.log("taskCtrl");
 const taskCtrl = require('../controllers/taskController');
+console.log("submi");
 const submissionCtrl = require('../controllers/submissionController');
+console.log("admin");
 const adminCtrl = require('../controllers/adminController');
+console.log("project");
+const projectCtrl  = require('../controllers/projectController');
+console.log("wirth");
+const withdrawalCtrl  = require('../controllers/withdrawalController');
+console.log("after all import")
+
 
 // ── Health check ─────────────────────────────────────────────────────────────
 router.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
@@ -81,5 +91,110 @@ router.patch('/admin/users/:id/role', authenticate, authorize('admin'), mongoIdP
 router.post('/admin/users/:id/wallet', authenticate, authorize('admin'), mongoIdParam('id'), adminCtrl.adminAdjustWallet);
 
 router.get('/admin/tasks/:taskId/export', authenticate, authorize('admin'), adminCtrl.exportDataset);
+
+
+// ── Project routes ─────────────────────────────────────────────
+router.get('/projects/languages', authenticate, projectCtrl.getLanguageOptions);
+
+router.get('/projects',
+  authenticate,
+  authorize('admin'),
+  paginationValidator,
+  projectCtrl.getProjects
+);
+
+router.post('/projects',
+  authenticate,
+  authorize('admin'),
+  projectCtrl.createProject
+);
+
+router.get('/projects/:id',
+  authenticate,
+  authorize('admin'),
+  mongoIdParam('id'),
+  projectCtrl.getProject
+);
+
+router.put('/projects/:id',
+  authenticate,
+  authorize('admin'),
+  mongoIdParam('id'),
+  projectCtrl.updateProject
+);
+
+router.patch('/projects/:id/status',
+  authenticate,
+  authorize('admin'),
+  mongoIdParam('id'),
+  projectCtrl.setProjectStatus
+);
+
+router.post('/projects/:id/tasks',
+  authenticate,
+  authorize('admin'),
+  mongoIdParam('id'),
+  projectCtrl.assignTask
+);
+
+
+// ── Withdrawal routes ──────────────────────────────────────────
+
+// User
+// router.post('/withdrawals',
+//   authenticate,
+//   authorize('contributor', 'validator'),
+//   withdrawalCtrl.rejectWithdrawal
+// );
+
+router.post('/withdrawals',
+  authenticate,
+  authorize('contributor', 'validator'),
+  withdrawalCtrl.requestWithdrawal
+);
+
+router.get('/withdrawals/my',
+  authenticate,
+  paginationValidator,
+  withdrawalCtrl.getMyWithdrawals
+);
+
+router.delete('/withdrawals/:id',
+  authenticate,
+  mongoIdParam('id'),
+  withdrawalCtrl.cancelWithdrawal
+);
+
+
+// Admin
+router.get('/admin/withdrawals',
+  authenticate,
+  authorize('admin'),
+  paginationValidator,
+  withdrawalCtrl.getAllWithdrawals
+);
+
+router.post('/admin/withdrawals/:id/approve',
+  authenticate,
+  authorize('admin'),
+  mongoIdParam('id'),
+  withdrawalCtrl.approveWithdrawal
+);
+
+router.post('/admin/withdrawals/:id/reject',
+  authenticate,
+  authorize('admin'),
+  mongoIdParam('id'),
+  withdrawalCtrl.rejectWithdrawal
+);
+
+
+// ── Razorpay webhook ───────────────────────────────────────────
+router.post(
+  '/webhooks/razorpay',
+  express.raw({ type: 'application/json' }),
+  withdrawalCtrl.razorpayWebhook
+);
+
 
 module.exports = router;
