@@ -23,9 +23,9 @@ const createQueue = (name) => {
     },
   });
 
-  queue.on('error', (err) => logger.error(`Queue [${name}] error:`, err));
-  queue.on('failed', (job, err) => logger.error(`Queue [${name}] job ${job.id} failed:`, err.message));
-  queue.on('completed', (job) => logger.info(`Queue [${name}] job ${job.id} completed`));
+  // queue.on('error', (err) => logger.error(`Queue [${name}] error:`, err));
+  // queue.on('failed', (job, err) => logger.error(`Queue [${name}] job ${job.id} failed:`, err.message));
+  // queue.on('completed', (job) => logger.info(`Queue [${name}] job ${job.id} completed`));
 
   return queue;
 };

@@ -11,19 +11,13 @@ const {
 } = require('../middleware/validators');
 const { upload } = require('../config/storage');
 
-console.log("authCtrl");
+
 const authCtrl = require('../controllers/authController');
-console.log("taskCtrl");
 const taskCtrl = require('../controllers/taskController');
-console.log("submi");
 const submissionCtrl = require('../controllers/submissionController');
-console.log("admin");
 const adminCtrl = require('../controllers/adminController');
-console.log("project");
 const projectCtrl  = require('../controllers/projectController');
-console.log("wirth");
 const withdrawalCtrl  = require('../controllers/withdrawalController');
-console.log("after all import")
 
 
 // ── Health check ─────────────────────────────────────────────────────────────

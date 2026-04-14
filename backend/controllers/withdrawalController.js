@@ -1,7 +1,4 @@
-console.log("🔥 withdrawalController start");
 const withdrawalService = require('../services/withdrawalService');
-
-console.log("after with bewfor rozer[ay] withdrawalService");
 const razorpayService = require('../services/razorpayService');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { sendSuccess, sendCreated, sendPaginated } = require('../utils/apiResponse');

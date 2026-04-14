@@ -13,7 +13,7 @@ const logger = require('./utils/logger');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-console.log("before evering========================")
+
 // ── Security middleware ───────────────────────────────────────────────────────
 app.use(helmet());
 app.use(cors({
@@ -43,7 +43,7 @@ app.use('/uploads', express.static('uploads'));
 
 // ── API Routes ────────────────────────────────────────────────────────────────
 app.use('/api/v1', routes);
-console.log("after routes-------------------")
+
 // ── 404 & Error handlers ──────────────────────────────────────────────────────
 app.use(notFound);
 app.use(errorHandler);
@@ -55,8 +55,8 @@ const start = async () => {
   // Initialize queue workers (only if Redis is available)
   if (process.env.REDIS_HOST) {
     try {
-      // require('./queues/workers');
-      // logger.info('Queue workers started');
+      require('./queues/workers');
+      logger.info('Queue workers started');
     } catch (err) {
       logger.warn('Redis not available, running without queues:', err.message);
     }
