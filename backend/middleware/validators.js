@@ -52,6 +52,28 @@ const createTaskValidator = [
   body('difficulty')
     .optional()
     .isIn(['easy', 'medium', 'hard']).withMessage('Difficulty must be easy, medium, or hard'),
+  body('project').optional().isMongoId().withMessage('Valid project ID required'),
+  validate,
+];
+
+const createProjectTaskValidator = [
+  body('title').trim().notEmpty().withMessage('Title required').isLength({ max: 200 }),
+  body('description').trim().notEmpty().withMessage('Description required'),
+  body('type').isIn(['audio', 'text', 'image']).withMessage('Type must be audio, text, or image'),
+  body('instructions').trim().notEmpty().withMessage('Instructions required'),
+  body('pricePerTask').isFloat({ min: 0.01 }).withMessage('Price must be at least 0.01'),
+  body('totalSlots').isInt({ min: 1 }).withMessage('Total slots must be at least 1'),
+  validate,
+];
+
+const generateProjectTasksValidator = [
+  body('taskType').isIn(['audio', 'text', 'image']).withMessage('Task type must be audio, text, or image'),
+  body('description').trim().notEmpty().withMessage('Description is required'),
+  body('language').trim().notEmpty().withMessage('Language is required'),
+  body('country').trim().notEmpty().withMessage('Country is required'),
+  body('count').isInt({ min: 1, max: 100 }).withMessage('Count must be between 1 and 100'),
+  body('pricePerTask').optional().isFloat({ min: 0.01 }).withMessage('Price must be at least 0.01'),
+  body('totalSlots').optional().isInt({ min: 1 }).withMessage('Total slots must be at least 1'),
   validate,
 ];
 
@@ -102,6 +124,8 @@ module.exports = {
   registerValidator,
   loginValidator,
   createTaskValidator,
+  createProjectTaskValidator,
+  generateProjectTasksValidator,
   updateTaskValidator,
   submitTaskValidator,
   validateSubmissionValidator,

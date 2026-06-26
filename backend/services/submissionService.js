@@ -224,7 +224,7 @@ class SubmissionService {
   /**
    * Get contributor's submission history (paginated)
    */
-  async getMySubmissions(contributorId, { page = 1, limit = 20, status } = {}) {
+  async getMySubmissions(contributorId, { page = 1, limit = 5, status } = {}) {
     const filter = { contributor: contributorId };
     if (status) filter.status = status;
 

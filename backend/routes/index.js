@@ -6,6 +6,7 @@ const { authLimiter, assignmentLimiter, uploadLimiter } = require('../middleware
 const {
   registerValidator, loginValidator,
   createTaskValidator, updateTaskValidator,
+  createProjectTaskValidator, generateProjectTasksValidator,
   submitTaskValidator, validateSubmissionValidator,
   paginationValidator, mongoIdParam,
 } = require('../middleware/validators');
@@ -124,11 +125,34 @@ router.patch('/projects/:id/status',
   projectCtrl.setProjectStatus
 );
 
-router.post('/projects/:id/tasks',
+router.post('/projects/:id/tasks/assign',
   authenticate,
   authorize('admin'),
   mongoIdParam('id'),
   projectCtrl.assignTask
+);
+
+router.post('/projects/:id/tasks',
+  authenticate,
+  authorize('admin'),
+  mongoIdParam('id'),
+  createProjectTaskValidator,
+  projectCtrl.createTask
+);
+
+router.post('/projects/:id/generate-tasks',
+  authenticate,
+  authorize('admin'),
+  mongoIdParam('id'),
+  generateProjectTasksValidator,
+  projectCtrl.generateTasks
+);
+
+router.get('/projects/:id/generate-tasks/:jobId',
+  authenticate,
+  authorize('admin'),
+  mongoIdParam('id'),
+  projectCtrl.getGenerationStatus
 );
 
 

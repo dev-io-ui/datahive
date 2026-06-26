@@ -1,6 +1,7 @@
-const { fileProcessingQueue, auditQueue, walletQueue } = require('../config/queues');
+const { fileProcessingQueue, auditQueue, walletQueue, aiTaskQueue } = require('../config/queues');
 const Submission = require('../models/Submission');
 const logger = require('../utils/logger');
+const projectService = require('../services/projectService');
 
 // ── File Processing Worker ───────────────────────────────────────────────────
 fileProcessingQueue.process('process-file', async (job) => {
@@ -41,6 +42,14 @@ auditQueue.process('audit-submission', async (job) => {
 
   logger.info(`Audit complete for submission ${submissionId}: ${auditResult}`);
   return { submissionId, auditResult };
+});
+
+// ── AI task generation worker ────────────────────────────────────────────────
+aiTaskQueue.process('generate-project-tasks', async (job) => {
+  const { projectId, adminId, payload } = job.data;
+  logger.info(`Generating AI tasks for project ${projectId}`);
+  const result = await projectService.generateAndStoreTasks(projectId, adminId, payload);
+  return { projectId, created: result.tasks.length, providerUsed: result.providerUsed };
 });
 
 // ── Periodic expired lock release ─────────────────────────────────────────────

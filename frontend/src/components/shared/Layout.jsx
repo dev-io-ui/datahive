@@ -18,7 +18,7 @@ const navByRole = {
   ],
   admin: [
     { label: 'Dashboard', href: '/admin', icon: BarChart3 },
-    { label: 'Create Project', href: '/admin/psubmissions', icon: FileText },
+    { label: 'Projects', href: '/admin/projects', icon: FileText },
     { label: 'Tasks', href: '/admin/tasks', icon: FileText },
     { label: 'Users', href: '/admin/users', icon: Users },
     { label: 'Submissions', href: '/admin/submissions', icon: ClipboardList }

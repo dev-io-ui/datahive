@@ -87,7 +87,7 @@ const taskSchema = new mongoose.Schema(
     project: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Project',
-      // optional — tasks can exist standalone or inside a project
+      required: [true, 'Project is required'],
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -123,6 +123,7 @@ taskSchema.virtual('validatorReward').get(function () {
 taskSchema.index({ status: 1, type: 1 });
 taskSchema.index({ status: 1, assignedCount: 1, totalSlots: 1 }); // for assignment queries
 taskSchema.index({ createdBy: 1 });
+taskSchema.index({ project: 1, status: 1 });
 taskSchema.index({ tags: 1 });
 taskSchema.index({ endsAt: 1 }, { expireAfterSeconds: 0, sparse: true }); // TTL index
 

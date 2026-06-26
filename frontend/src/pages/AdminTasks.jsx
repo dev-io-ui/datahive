@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { useForm } from 'react-hook-form';
-import { taskAPI, adminAPI } from '../services/api';
+import { taskAPI, adminAPI, projectAPI } from '../services/api';
 import Layout from '../components/shared/Layout';
 import toast from 'react-hot-toast';
 import { Plus, X, Download, Pause, Play, Trash2, Mic, Type, Image } from 'lucide-react';
@@ -20,6 +20,11 @@ function CreateTaskModal({ onClose, onCreated }) {
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
     defaultValues: { type: 'text', difficulty: 'medium', validationsRequired: 1, validatorRewardPercent: 20 }
   });
+  const { data: projectsData } = useQuery(
+    ['task-create-projects'],
+    () => projectAPI.list({ page: 1, limit: 100, status: 'active' }).then((r) => r.data)
+  );
+  const projects = projectsData?.data || [];
 
   const createMutation = useMutation(
     (data) => taskAPI.create({ ...data, status: 'active' }),
@@ -41,6 +46,18 @@ function CreateTaskModal({ onClose, onCreated }) {
           <div>
             <label className={labelClass}>Title</label>
             <input className={inputClass} placeholder="Record yourself reading a sentence" {...register('title', { required: true })} />
+          </div>
+          <div>
+            <label className={labelClass}>Project</label>
+            <select className={inputClass} {...register('project', { required: true })}>
+              <option value="">Select active project...</option>
+              {projects.map((p) => (
+                <option key={p._id} value={p._id}>{p.name}</option>
+              ))}
+            </select>
+            {projects.length === 0 && (
+              <p className="text-xs text-amber-600 mt-1">Create and activate a project first.</p>
+            )}
           </div>
 
           <div>

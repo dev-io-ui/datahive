@@ -35,10 +35,12 @@ const fileProcessingQueue = createQueue('file-processing');
 const notificationQueue = createQueue('notifications');
 const auditQueue = createQueue('audit-checks');
 const walletQueue = createQueue('wallet-transactions');
+const aiTaskQueue = createQueue('ai-task-generation');
 
 module.exports = {
   fileProcessingQueue,
   notificationQueue,
   auditQueue,
   walletQueue,
+  aiTaskQueue,
 };

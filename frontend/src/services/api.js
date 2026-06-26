@@ -139,5 +139,17 @@ export const adminAPI = {
     api.get(`/admin/tasks/${taskId}/export`, { params: { format }, responseType: 'blob' }),
 };
 
+export const projectAPI = {
+  list: (params) => api.get('/projects', { params }),
+  get: (id) => api.get(`/projects/${id}`),
+  create: (data) => api.post('/projects', data),
+  update: (id, data) => api.put(`/projects/${id}`, data),
+  setStatus: (id, status) => api.patch(`/projects/${id}/status`, { status }),
+  languages: () => api.get('/projects/languages'),
+  createTask: (projectId, data) => api.post(`/projects/${projectId}/tasks`, data),
+  generateTasks: (projectId, data) => api.post(`/projects/${projectId}/generate-tasks`, data),
+  generationStatus: (projectId, jobId) => api.get(`/projects/${projectId}/generate-tasks/${jobId}`),
+};
+
 export { clearAuthTokens };
 export default api;

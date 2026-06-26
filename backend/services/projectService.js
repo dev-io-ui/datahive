@@ -2,6 +2,8 @@ const Project = require('../models/Project');
 const Task = require('../models/Task');
 const Submission = require('../models/Submission');
 const mongoose = require('mongoose');
+const aiTaskService = require('./aiTaskService');
+const { aiTaskQueue } = require('../config/queues');
 
 class ProjectService {
   /**
@@ -104,7 +106,17 @@ class ProjectService {
       submissionStats: subMap[t._id.toString()] || { total: 0, pending: 0, accepted: 0, rejected: 0 },
     }));
 
-    return { project, tasks: tasksWithStats };
+    const totalTaskCount = tasks.length;
+    const completedTaskCount = tasks.filter((task) => (
+      task.status === 'completed' || (task.totalSlots > 0 && task.completedCount >= task.totalSlots)
+    )).length;
+
+    return {
+      project,
+      tasks: tasksWithStats,
+      totalTaskCount,
+      completedTaskCount,
+    };
   }
 
   /**
@@ -141,6 +153,127 @@ class ProjectService {
     await Project.findByIdAndUpdate(projectId, { $inc: { taskCount: 1 } });
 
     return task;
+  }
+
+  async createTaskInProject(projectId, taskData, adminId) {
+    const project = await Project.findById(projectId);
+    if (!project) throw Object.assign(new Error('Project not found'), { statusCode: 404 });
+    if (project.status !== 'active') {
+      throw Object.assign(new Error('Cannot create tasks in inactive project'), { statusCode: 400 });
+    }
+
+    const task = await Task.create({
+      ...taskData,
+      project: projectId,
+      createdBy: adminId,
+    });
+
+    await this.refreshProjectTaskCount(projectId);
+    return task;
+  }
+
+  async generateTasksForProject(projectId, payload, adminId) {
+    const project = await Project.findById(projectId);
+    if (!project) throw Object.assign(new Error('Project not found'), { statusCode: 404 });
+    if (project.status !== 'active') {
+      throw Object.assign(new Error('Task generation allowed only for active projects'), { statusCode: 400 });
+    }
+
+    const count = Math.min(Math.max(parseInt(payload.count, 10) || 10, 1), 100);
+    if (count > 20 && process.env.REDIS_HOST) {
+      const job = await aiTaskQueue.add('generate-project-tasks', {
+        projectId,
+        adminId,
+        payload: { ...payload, count },
+      });
+      return { queued: true, jobId: job.id, count, providerUsed: 'queued' };
+    }
+
+    const result = await this.generateAndStoreTasks(projectId, adminId, { ...payload, count });
+    return {
+      queued: false,
+      count: result.tasks.length,
+      tasks: result.tasks,
+      providerUsed: result.providerUsed,
+    };
+  }
+
+  async getGenerationJobStatus(projectId, jobId) {
+    const job = await aiTaskQueue.getJob(jobId);
+    if (!job) throw Object.assign(new Error('Generation job not found'), { statusCode: 404 });
+
+    if (String(job.data?.projectId) !== String(projectId)) {
+      throw Object.assign(new Error('Generation job does not belong to this project'), { statusCode: 403 });
+    }
+
+    const [isCompleted, isFailed, isDelayed, isActive, isWaiting] = await Promise.all([
+      job.isCompleted(),
+      job.isFailed(),
+      job.isDelayed(),
+      job.isActive(),
+      job.isWaiting(),
+    ]);
+
+    let status = 'unknown';
+    if (isCompleted) status = 'completed';
+    else if (isFailed) status = 'failed';
+    else if (isActive) status = 'active';
+    else if (isDelayed) status = 'delayed';
+    else if (isWaiting) status = 'waiting';
+
+    return {
+      jobId: String(job.id),
+      status,
+      attemptsMade: job.attemptsMade,
+      progress: job.progress() || 0,
+      result: job.returnvalue || null,
+      providerUsed: job.returnvalue?.providerUsed || null,
+      failedReason: job.failedReason || null,
+    };
+  }
+
+  async generateAndStoreTasks(projectId, adminId, payload) {
+    const generatedResult = await aiTaskService.generateTasks(payload);
+    const generated = generatedResult.tasks || [];
+    const existing = await Task.find({ project: projectId }).select('title').lean();
+    const existingSet = new Set(existing.map((item) => item.title.trim().toLowerCase()));
+
+    const toInsert = generated
+      .map((item) => {
+        const title = (item.title || '').trim();
+        if (!title) return null;
+        const dedupeKey = title.toLowerCase();
+        if (existingSet.has(dedupeKey)) return null;
+        existingSet.add(dedupeKey);
+        return {
+          title,
+          description: item.description || payload.description,
+          type: payload.taskType,
+          instructions: item.instructions || 'Follow project instructions carefully.',
+          sampleData: {
+            text: item.sampleInput || '',
+            description: item.expectedOutput || '',
+          },
+          pricePerTask: Number(payload.pricePerTask) || 1,
+          totalSlots: Number(payload.totalSlots) || 1,
+          status: 'active',
+          project: projectId,
+          createdBy: adminId,
+        };
+      })
+      .filter(Boolean);
+
+    if (toInsert.length === 0) {
+      return { tasks: [], providerUsed: generatedResult.providerUsed || 'mock' };
+    }
+    const inserted = await Task.insertMany(toInsert);
+    await this.refreshProjectTaskCount(projectId);
+    return { tasks: inserted, providerUsed: generatedResult.providerUsed || 'mock' };
+  }
+
+  async refreshProjectTaskCount(projectId) {
+    const total = await Task.countDocuments({ project: projectId });
+    await Project.findByIdAndUpdate(projectId, { taskCount: total });
   }
 
   /**

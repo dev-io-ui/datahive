@@ -1,10 +1,17 @@
 const Task = require('../models/Task');
+const Project = require('../models/Project');
 const assignmentService = require('../services/assignmentService');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { sendSuccess, sendCreated, sendPaginated, sendNotFound } = require('../utils/apiResponse');
 
 // Admin: Create a task
 const createTask = asyncHandler(async (req, res) => {
+  const project = await Project.findById(req.body.project);
+  if (!project) {
+    const err = new Error('Project not found');
+    err.statusCode = 404;
+    throw err;
+  }
   const task = await Task.create({ ...req.body, createdBy: req.user.id });
   return sendCreated(res, task, 'Task created successfully');
 });
@@ -32,7 +39,7 @@ const archiveTask = asyncHandler(async (req, res) => {
 
 // Public/contributor: List active tasks (paginated)
 const getTasks = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 20, type, status, search } = req.query;
+  const { page = 1, limit = 10, type, status, search, projectId } = req.query;
 
   const filter = {};
   // Non-admins only see active tasks
@@ -42,6 +49,7 @@ const getTasks = asyncHandler(async (req, res) => {
     filter.status = status;
   }
   if (type) filter.type = type;
+  if (projectId) filter.project = projectId;
   if (search) filter.$text = { $search: search };
 
   const result = await Task.paginate(filter, {

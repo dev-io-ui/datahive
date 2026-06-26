@@ -36,9 +36,39 @@ const assignTask = asyncHandler(async (req, res) => {
   return sendSuccess(res, task, 'Task assigned to project');
 });
 
+const createTask = asyncHandler(async (req, res) => {
+  const task = await projectService.createTaskInProject(req.params.id, req.body, req.user.id);
+  return sendCreated(res, task, 'Task created in project');
+});
+
+const generateTasks = asyncHandler(async (req, res) => {
+  const result = await projectService.generateTasksForProject(req.params.id, req.body, req.user.id);
+  return sendSuccess(
+    res,
+    result,
+    result.queued ? 'Task generation queued' : 'Tasks generated successfully'
+  );
+});
+
+const getGenerationStatus = asyncHandler(async (req, res) => {
+  const status = await projectService.getGenerationJobStatus(req.params.id, req.params.jobId);
+  return sendSuccess(res, status, 'Generation job status retrieved');
+});
+
 const getLanguageOptions = asyncHandler(async (req, res) => {
   const options = projectService.getLanguageOptions();
   return sendSuccess(res, options);
 });
 
-module.exports = { createProject, getProjects, getProject, updateProject, setProjectStatus, assignTask, getLanguageOptions };
+module.exports = {
+  createProject,
+  getProjects,
+  getProject,
+  updateProject,
+  setProjectStatus,
+  assignTask,
+  createTask,
+  generateTasks,
+  getGenerationStatus,
+  getLanguageOptions,
+};

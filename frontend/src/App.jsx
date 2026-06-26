@@ -17,6 +17,7 @@ import AdminTasks from './pages/AdminTasks';
 import AdminUsers from './pages/AdminUsers';
 import AdminSubmissions from './pages/AdminSubmissions';
 import AdminProjects from './pages/Adminprojects';
+import AdminProjectDetails from './pages/AdminProjectDetails';
 import NotFound from './pages/NotFound';
 
 const queryClient = new QueryClient({
@@ -118,11 +119,17 @@ function AppRoutes() {
           <AdminSubmissions />
         </ProtectedRoute>
       } />
-       <Route path="/admin/psubmissions" element={
+      <Route path="/admin/projects" element={
         <ProtectedRoute roles={['admin']}>
           <AdminProjects />
         </ProtectedRoute>
       } />
+      <Route path="/admin/projects/:id" element={
+        <ProtectedRoute roles={['admin']}>
+          <AdminProjectDetails />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/psubmissions" element={<Navigate to="/admin/projects" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
