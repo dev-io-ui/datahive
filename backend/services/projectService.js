@@ -3,6 +3,7 @@ const Task = require('../models/Task');
 const Submission = require('../models/Submission');
 const mongoose = require('mongoose');
 const aiTaskService = require('./aiTaskService');
+const aiProjectService = require('./ai/aiProjectService');
 const { aiTaskQueue } = require('../config/queues');
 
 class ProjectService {
@@ -12,6 +13,127 @@ class ProjectService {
   async createProject(data, adminId) {
     const project = await Project.create({ ...data, createdBy: adminId });
     return project;
+  }
+
+  async generateProjectWithAI({ idea, save = false }, adminId) {
+    const generated = await aiProjectService.generateProject({ idea, adminId, includeTasks: save });
+    const projectData = this.normalizeGeneratedProject(generated.project);
+    const taskDrafts = save
+      ? generated.tasks.map((task) => this.normalizeGeneratedTask(task))
+      : [];
+
+    await this.validateGeneratedProject(projectData, adminId);
+    if (save) {
+      await this.validateGeneratedTasks(taskDrafts, adminId);
+    }
+
+    if (!save) {
+      return {
+        saved: false,
+        providerUsed: generated.providerUsed,
+        project: projectData,
+      };
+    }
+
+    const project = await this.createProject(projectData, adminId);
+    const tasks = [];
+    for (const taskDraft of taskDrafts) {
+      tasks.push(await this.createTaskInProject(project._id, taskDraft, adminId));
+    }
+
+    return {
+      saved: true,
+      providerUsed: generated.providerUsed,
+      project,
+      tasks,
+    };
+  }
+
+  normalizeGeneratedProject(project) {
+    return {
+      name: this.cleanString(project.name),
+      description: this.cleanString(project.description),
+      client: {
+        name: this.cleanString(project.client?.name),
+        email: this.cleanString(project.client?.email).toLowerCase(),
+        company: this.cleanString(project.client?.company),
+        contractRef: this.cleanString(project.client?.contractRef),
+      },
+      dataset: {
+        language: this.cleanString(project.dataset?.language).toLowerCase(),
+        languageLabel: this.cleanString(project.dataset?.languageLabel),
+        country: this.cleanString(project.dataset?.country).toUpperCase(),
+        countryLabel: this.cleanString(project.dataset?.countryLabel),
+        dialect: this.cleanString(project.dataset?.dialect),
+        domain: this.cleanString(project.dataset?.domain) || 'general',
+        dataType: this.cleanString(project.dataset?.dataType) || 'text',
+        targetSize: this.cleanString(project.dataset?.targetSize),
+      },
+      status: project.status,
+      budget: {
+        total: Number(project.budget?.total) || 0,
+        allocated: Number(project.budget?.allocated) || 0,
+        spent: Number(project.budget?.spent) || 0,
+      },
+      color: this.cleanString(project.color) || '#6366f1',
+      icon: this.cleanString(project.icon) || 'AI',
+      tags: Array.isArray(project.tags)
+        ? project.tags.map((tag) => this.cleanString(tag)).filter(Boolean)
+        : [],
+      startDate: project.startDate,
+      deadline: project.deadline,
+    };
+  }
+
+  normalizeGeneratedTask(task) {
+    return {
+      title: this.cleanString(task.title),
+      description: this.cleanString(task.description),
+      type: this.cleanString(task.type),
+      instructions: this.cleanString(task.instructions),
+      sampleData: {
+        text: this.cleanString(task.sampleData?.text),
+        fileUrl: this.cleanString(task.sampleData?.fileUrl),
+        description: this.cleanString(task.sampleData?.description),
+      },
+      pricePerTask: Number(task.pricePerTask),
+      totalSlots: Number(task.totalSlots),
+      validationsRequired: Number(task.validationsRequired) || 1,
+      validatorRewardPercent: Number(task.validatorRewardPercent) || 20,
+      status: task.status || 'active',
+      tags: Array.isArray(task.tags)
+        ? task.tags.map((tag) => this.cleanString(tag)).filter(Boolean)
+        : [],
+      category: this.cleanString(task.category),
+      difficulty: this.cleanString(task.difficulty) || 'medium',
+      estimatedMinutes: task.estimatedMinutes ? Number(task.estimatedMinutes) : undefined,
+    };
+  }
+
+  async validateGeneratedProject(projectData, adminId) {
+    const project = new Project({ ...projectData, createdBy: adminId });
+    await project.validate();
+  }
+
+  async validateGeneratedTasks(tasks, adminId) {
+    if (!tasks.length) {
+      throw Object.assign(new Error('AI did not generate any tasks'), { statusCode: 422 });
+    }
+
+    const projectId = new mongoose.Types.ObjectId();
+    for (const taskData of tasks) {
+      const task = new Task({
+        ...taskData,
+        project: projectId,
+        createdBy: adminId,
+      });
+      await task.validate();
+    }
+  }
+
+  cleanString(value) {
+    if (value === null || value === undefined) return '';
+    return String(value).trim();
   }
 
   /**

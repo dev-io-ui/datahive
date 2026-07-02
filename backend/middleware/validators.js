@@ -77,6 +77,18 @@ const generateProjectTasksValidator = [
   validate,
 ];
 
+const generateProjectValidator = [
+  body('idea')
+    .trim()
+    .notEmpty().withMessage('Idea is required')
+    .isLength({ min: 20, max: 2000 }).withMessage('Idea must be between 20 and 2000 characters'),
+  body('save')
+    .optional()
+    .isBoolean().withMessage('Save must be true or false')
+    .toBoolean(),
+  validate,
+];
+
 const updateTaskValidator = [
   body('title').optional().trim().notEmpty().isLength({ max: 200 }),
   body('status').optional().isIn(['draft', 'active', 'paused', 'completed', 'archived']),
@@ -126,6 +138,7 @@ module.exports = {
   createTaskValidator,
   createProjectTaskValidator,
   generateProjectTasksValidator,
+  generateProjectValidator,
   updateTaskValidator,
   submitTaskValidator,
   validateSubmissionValidator,

@@ -7,7 +7,7 @@ import Layout from '../components/shared/Layout';
 import toast from 'react-hot-toast';
 import {
   Plus, X, Globe, Users, FileText, ChevronRight,
-  Play, Pause, Archive, Layers, Tag, Building2, Calendar
+  Play, Pause, Archive, Layers, Tag, Building2, Calendar, Sparkles
 } from 'lucide-react';
 
 const API = process.env.REACT_APP_API_URL || 'http://localhost:5000/api/v1';
@@ -16,6 +16,7 @@ const authHeader = () => ({ Authorization: `Bearer ${localStorage.getItem('acces
 const projectAPI = {
   list: (params) => axios.get(`${API}/projects`, { headers: authHeader(), params }),
   create: (data) => axios.post(`${API}/projects`, data, { headers: authHeader() }),
+  generate: (data) => axios.post(`${API}/projects/generate`, data, { headers: authHeader() }),
   update: (id, data) => axios.put(`${API}/projects/${id}`, data, { headers: authHeader() }),
   setStatus: (id, status) => axios.patch(`${API}/projects/${id}/status`, { status }, { headers: authHeader() }),
   languages: () => axios.get(`${API}/projects/languages`, { headers: authHeader() }),
@@ -269,6 +270,72 @@ function CreateProjectModal({ onClose, onCreate }) {
 }
 
 // ── Project Card ──────────────────────────────────────────────────────────────
+function GenerateProjectModal({ onClose, onCreate }) {
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
+    defaultValues: {
+      idea: '',
+    },
+  });
+
+  const onSubmit = async (data) => {
+    const response = await projectAPI.generate({
+      idea: data.idea,
+      save: true,
+    });
+    const taskCount = response.data?.data?.tasks?.length || 0;
+    toast.success(`AI project created with ${taskCount} tasks`);
+    onCreate();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl w-full max-w-xl shadow-2xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div>
+            <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+              <Sparkles size={18} className="text-purple-600" /> Create Project with AI
+            </h2>
+            <p className="text-xs text-gray-400 mt-0.5">Generate a project and starter tasks from one idea</p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1">
+            <X size={20} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">
+              Project Idea
+            </label>
+            <textarea
+              className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              rows={6}
+              placeholder="Create an AI project to collect Indian English customer support conversations."
+              {...register('idea', {
+                required: 'Project idea is required',
+                minLength: { value: 20, message: 'Idea must be at least 20 characters' },
+                maxLength: { value: 2000, message: 'Idea cannot exceed 2000 characters' },
+              })}
+            />
+            {errors.idea && <p className="text-red-500 text-xs mt-1">{errors.idea.message}</p>}
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose}
+              className="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-50 transition">
+              Cancel
+            </button>
+            <button type="submit" disabled={isSubmitting}
+              className="flex-1 bg-purple-600 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-purple-700 disabled:opacity-60 transition">
+              {isSubmitting ? 'Generating...' : 'Generate & Create'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function ProjectCard({ project, onStatusChange }) {
   const stats = project.liveStats || {};
   const pct = stats.totalSlots > 0 ? Math.round((stats.completedSlots / stats.totalSlots) * 100) : 0;
@@ -400,6 +467,7 @@ function ProjectCard({ project, onStatusChange }) {
 export default function AdminProjects() {
   const qc = useQueryClient();
   const [showModal, setShowModal] = useState(false);
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
 
@@ -430,10 +498,16 @@ export default function AdminProjects() {
             <h1 className="text-2xl font-bold text-gray-900">Projects</h1>
             <p className="text-gray-500 text-sm mt-1">Organize tasks by client, language, and dataset type</p>
           </div>
-          <button onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-indigo-700 transition">
-            <Plus size={16} /> New Project
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setShowGenerateModal(true)}
+              className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-purple-700 transition">
+              <Sparkles size={16} /> AI Project
+            </button>
+            <button onClick={() => setShowModal(true)}
+              className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-indigo-700 transition">
+              <Plus size={16} /> New Project
+            </button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -491,6 +565,10 @@ export default function AdminProjects() {
               className="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-indigo-700 transition">
               <Plus size={16} /> Create First Project
             </button>
+            <button onClick={() => setShowGenerateModal(true)}
+              className="mt-3 flex items-center gap-2 bg-purple-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-purple-700 transition">
+              <Sparkles size={16} /> Create with AI
+            </button>
           </div>
         )}
       </div>
@@ -499,6 +577,12 @@ export default function AdminProjects() {
         <CreateProjectModal
           onClose={() => setShowModal(false)}
           onCreate={() => { setShowModal(false); qc.invalidateQueries(['admin-projects']); }}
+        />
+      )}
+      {showGenerateModal && (
+        <GenerateProjectModal
+          onClose={() => setShowGenerateModal(false)}
+          onCreate={() => { setShowGenerateModal(false); qc.invalidateQueries(['admin-projects']); }}
         />
       )}
     </Layout>

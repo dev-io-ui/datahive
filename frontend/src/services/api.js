@@ -143,6 +143,7 @@ export const projectAPI = {
   list: (params) => api.get('/projects', { params }),
   get: (id) => api.get(`/projects/${id}`),
   create: (data) => api.post('/projects', data),
+  generate: (data) => api.post('/projects/generate', data),
   update: (id, data) => api.put(`/projects/${id}`, data),
   setStatus: (id, status) => api.patch(`/projects/${id}/status`, { status }),
   languages: () => api.get('/projects/languages'),

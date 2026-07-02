@@ -7,6 +7,7 @@ const {
   registerValidator, loginValidator,
   createTaskValidator, updateTaskValidator,
   createProjectTaskValidator, generateProjectTasksValidator,
+  generateProjectValidator,
   submitTaskValidator, validateSubmissionValidator,
   paginationValidator, mongoIdParam,
 } = require('../middleware/validators');
@@ -102,6 +103,13 @@ router.post('/projects',
   authenticate,
   authorize('admin'),
   projectCtrl.createProject
+);
+
+router.post('/projects/generate',
+  authenticate,
+  authorize('admin'),
+  generateProjectValidator,
+  projectCtrl.generateProject
 );
 
 router.get('/projects/:id',

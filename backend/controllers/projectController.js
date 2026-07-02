@@ -8,6 +8,15 @@ const createProject = asyncHandler(async (req, res) => {
   return sendCreated(res, project, 'Project created');
 });
 
+const generateProject = asyncHandler(async (req, res) => {
+  const result = await projectService.generateProjectWithAI(req.body, req.user.id);
+  return sendSuccess(
+    res,
+    result,
+    result.saved ? 'AI project generated and saved' : 'AI project generated'
+  );
+});
+
 const getProjects = asyncHandler(async (req, res) => {
   const { page = 1, limit = 20, status, language, country, search } = req.query;
   const result = await projectService.getProjects({
@@ -62,6 +71,7 @@ const getLanguageOptions = asyncHandler(async (req, res) => {
 
 module.exports = {
   createProject,
+  generateProject,
   getProjects,
   getProject,
   updateProject,
