@@ -19,6 +19,7 @@ import AdminSubmissions from './pages/AdminSubmissions';
 import AdminProjects from './pages/Adminprojects';
 import AdminProjectDetails from './pages/AdminProjectDetails';
 import NotFound from './pages/NotFound';
+import Profile from './pages/Profile';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -59,7 +60,7 @@ const HomeRedirect = () => {
 function AppRoutes() {
   return (
     <Routes>
-    
+
       {/* Public */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
@@ -95,6 +96,12 @@ function AppRoutes() {
       <Route path="/wallet" element={
         <ProtectedRoute roles={['contributor', 'validator']}>
           <WalletPage />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <Profile />
         </ProtectedRoute>
       } />
 

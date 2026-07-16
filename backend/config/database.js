@@ -5,6 +5,9 @@ const connectDB = async () => {
   try {
     const conn = await mongoose.connect(process.env.MONGODB_URI, {
       // Mongoose 7+ handles these defaults
+      serverSelectionTimeoutMS: 8000,  // fail fast instead of hanging up to 30s
+      socketTimeoutMS: 20000,
+      connectTimeoutMS: 8000,
     });
 
     logger.info(`MongoDB Connected: ${conn.connection.host}`);
@@ -23,6 +26,11 @@ const connectDB = async () => {
     });
 
   } catch (error) {
+    console.error("========== MONGODB ERROR ==========");
+    console.error(error);
+    console.error("Message:", error.message);
+    console.error("Name:", error.name);
+    console.error("Stack:", error.stack);
     logger.error('MongoDB connection failed:', error.message);
     process.exit(1);
   }

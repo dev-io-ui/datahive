@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   LayoutDashboard, ClipboardList, Wallet, Users, Settings,
-  LogOut, Menu, X, CheckSquare, BarChart3, FileText, ChevronRight
+  LogOut, Menu, X, CheckSquare, BarChart3, FileText, ChevronRight,UserCircle
 } from 'lucide-react';
 
 const navByRole = {
@@ -26,7 +26,7 @@ const navByRole = {
     
   ],
 };
-
+const commonNavItem = { label: 'Profile', href: '/profile', icon: UserCircle };
 const roleBadgeColor = {
   admin: 'bg-purple-100 text-purple-700',
   validator: 'bg-blue-100 text-blue-700',
@@ -40,6 +40,7 @@ export default function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const navItems = navByRole[user?.role] || [];
+  const allNavItems = [...navItems, commonNavItem];
 
   const handleLogout = async () => {
     await logout();
@@ -75,7 +76,7 @@ export default function Layout({ children }) {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1">
-        {navItems.map(({ label, href, icon: Icon }) => {
+        {allNavItems.map(({ label, href, icon: Icon }) => {
           const active = location.pathname === href;
           return (
             <Link

@@ -128,6 +128,12 @@ export const walletAPI = {
   withdraw: (data) => api.post('/wallet/withdraw', data),
 };
 
+export const profileAPI = {
+  get: () => api.get('/profile'),
+  update: (data) => api.put('/profile', data), // { name, email, phone }
+  deleteAccount: () => api.delete('/profile'),
+};
+
 export const adminAPI = {
   dashboard: () => api.get('/admin/dashboard'),
   leaderboard: (limit) => api.get('/admin/leaderboard', { params: { limit } }),

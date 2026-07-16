@@ -20,6 +20,7 @@ const submissionCtrl = require('../controllers/submissionController');
 const adminCtrl = require('../controllers/adminController');
 const projectCtrl  = require('../controllers/projectController');
 const withdrawalCtrl  = require('../controllers/withdrawalController');
+const profileCtrl = require('../controllers/profileController');
 
 
 // ── Health check ─────────────────────────────────────────────────────────────
@@ -32,6 +33,11 @@ router.post('/auth/refresh', authCtrl.refreshToken);
 router.post('/auth/logout', authenticate, authCtrl.logout);
 router.post('/auth/logout-all', authenticate, authCtrl.logoutAll);
 router.get('/auth/me', authenticate, authCtrl.getMe);
+
+// ── Profile routes ────────────────────────────────────────────────────────────
+router.get('/profile', authenticate, profileCtrl.getProfile);
+router.put('/profile', authenticate, profileCtrl.updateProfile);
+router.delete('/profile', authenticate, profileCtrl.deleteAccount);
 
 // ── Task routes ───────────────────────────────────────────────────────────────
 router.get('/tasks', authenticate, paginationValidator, taskCtrl.getTasks);
